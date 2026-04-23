@@ -1,0 +1,347 @@
+openapi: 3.0.3
+info:
+  title: API de Roles Admin y Empleado
+  version: 1.0.0
+  description: Contrato para autorizacion por roles con alcance Admin y Empleado sobre empleados/departamentos.
+servers:
+  - url: http://localhost:8080
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/login:
+    post:
+      summary: Iniciar sesion
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '423':
+          $ref: '#/components/responses/Locked'
+
+  /auth/me:
+    get:
+      summary: Obtener contexto de sesion autenticada
+      operationId: getSessionContext
+      responses:
+        '200':
+          description: Contexto de sesion actual
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SessionContextResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /api/empleados:
+    get:
+      summary: Listar empleados segun permisos del rol
+      operationId: listEmpleados
+      responses:
+        '200':
+          description: Lista de empleados
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/EmpleadoAdminResponse'
+                  - type: array
+                    items:
+                      $ref: '#/components/schemas/EmpleadoResumenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Crear empleado (solo Admin)
+      operationId: createEmpleado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmpleadoCreateRequest'
+      responses:
+        '201':
+          description: Empleado creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpleadoAdminResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /api/empleados/{clave}:
+    parameters:
+      - name: clave
+        in: path
+        required: true
+        schema:
+          type: string
+          pattern: '^EMP-[0-9]+$'
+
+    get:
+      summary: Obtener empleado por clave segun permisos
+      operationId: getEmpleadoByClave
+      responses:
+        '200':
+          description: Empleado encontrado
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/EmpleadoAdminResponse'
+                  - $ref: '#/components/schemas/EmpleadoResumenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      summary: Actualizar empleado (solo Admin)
+      operationId: updateEmpleado
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmpleadoUpdateRequest'
+      responses:
+        '200':
+          description: Empleado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmpleadoAdminResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      summary: Eliminar empleado (solo Admin)
+      operationId: deleteEmpleado
+      responses:
+        '204':
+          description: Empleado eliminado
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /api/departamentos:
+    get:
+      summary: Listar departamentos
+      operationId: listDepartamentos
+      responses:
+        '200':
+          description: Lista de departamentos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DepartamentoResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    post:
+      summary: Crear departamento (solo Admin)
+      operationId: createDepartamento
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepartamentoCreateRequest'
+      responses:
+        '201':
+          description: Departamento creado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepartamentoResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: token
+
+  schemas:
+    LoginRequest:
+      type: object
+      required: [usuario, contrasena]
+      properties:
+        usuario:
+          type: string
+        contrasena:
+          type: string
+
+    LoginResponse:
+      type: object
+      required: [token, tokenType, expiresInSeconds, usuario, role]
+      properties:
+        token:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresInSeconds:
+          type: integer
+        usuario:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, EMPLEADO]
+
+    SessionContextResponse:
+      type: object
+      required: [usuario, role]
+      properties:
+        usuario:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, EMPLEADO]
+
+    EmpleadoCreateRequest:
+      type: object
+      required: [nombre, direccion, telefono]
+      properties:
+        nombre:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+
+    EmpleadoUpdateRequest:
+      type: object
+      required: [nombre, direccion, telefono]
+      properties:
+        nombre:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+
+    EmpleadoAdminResponse:
+      type: object
+      required: [clave, nombre, direccion, telefono]
+      properties:
+        clave:
+          type: string
+        nombre:
+          type: string
+        direccion:
+          type: string
+        telefono:
+          type: string
+        departamentoActual:
+          type: string
+          nullable: true
+
+    EmpleadoResumenResponse:
+      type: object
+      required: [clave, nombre]
+      properties:
+        clave:
+          type: string
+        nombre:
+          type: string
+        departamentoActual:
+          type: string
+          nullable: true
+
+    DepartamentoCreateRequest:
+      type: object
+      required: [nombre]
+      properties:
+        nombre:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+
+    DepartamentoResponse:
+      type: object
+      required: [id, nombre, activo]
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+          nullable: true
+        activo:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: array
+          items:
+            type: string
+
+  responses:
+    Unauthorized:
+      description: Sesion invalida o inexistente
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Permisos insuficientes para la operacion
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Locked:
+      description: Cuenta temporalmente bloqueada
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
