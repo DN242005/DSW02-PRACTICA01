@@ -40,7 +40,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: |
+          set +e
           mvn -B -Dsurefire.failIfNoSpecifiedTests=false -Dtest='*Test,!*IntegrationTest' test org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }} \
-            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
+            -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }} | tee sonar.log
+          STATUS=$?
+          set -e
+
+          if [ "$STATUS" -ne 0 ] && grep -q "Automatic Analysis is enabled" sonar.log; then
+            echo "SonarCloud CI analysis skipped: Automatic Analysis is enabled in SonarCloud project settings."
+            exit 0
+          fi
+
+          exit "$STATUS"
