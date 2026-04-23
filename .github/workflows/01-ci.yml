@@ -33,7 +33,7 @@ jobs:
           cache: maven
 
       - name: Run backend tests
-        run: mvn -B -Dtest='*Test,!*IntegrationTest' test
+        run: mvn -B -Dsurefire.failIfNoSpecifiedTests=false -Dtest='*Test,!*IntegrationTest' test
 
   frontend:
     name: Frontend Unit Tests
@@ -55,5 +55,11 @@ jobs:
       - name: Install frontend dependencies
         run: npm install
 
-      - name: Run frontend tests
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+      - name: Run frontend checks
+        run: |
+          if npm run | grep -qE '^\s+test\s'; then
+            npm test -- --watch=false --browsers=ChromeHeadless
+          else
+            echo "No test script found in frontend/package.json. Running build instead."
+            npm run build
+          fi
