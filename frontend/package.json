@@ -6,7 +6,9 @@
     "ng": "ng",
     "start": "ng serve --host 0.0.0.0 --port 4200",
     "build": "ng build",
-    "watch": "ng build --watch --configuration development"
+    "watch": "ng build --watch --configuration development",
+    "cy:login": "cypress run --browser chrome --headless --spec cypress/e2e/authentication.cy.ts",
+    "cy:login:docker": "docker compose -f ../docker/postgres/docker-compose.yml up -d database backend frontend proxy && cypress run --browser chrome --headless --spec cypress/e2e/authentication.cy.ts --config baseUrl=http://localhost"
   },
   "dependencies": {
     "@angular/animations": "^21.0.0",
@@ -25,6 +27,7 @@
     "@angular-devkit/build-angular": "^21.0.0",
     "@angular/cli": "^21.0.0",
     "@angular/compiler-cli": "^21.0.0",
+    "cypress": "^15.14.1",
     "typescript": "^5.9.3"
   }
 }

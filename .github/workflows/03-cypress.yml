@@ -31,23 +31,27 @@ jobs:
           node-version: "20"
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Start frontend app
-        run: npm run start -- --host 127.0.0.1 --port 4200 > /tmp/ng-serve.log 2>&1 &
+      - name: Start Docker Compose stack
+        run: docker compose -f ../docker/postgres/docker-compose.yml up -d database backend frontend proxy
 
-      - name: Wait for frontend app
+      - name: Wait for proxy and frontend
         run: |
           for i in {1..60}; do
-            if curl -sSf http://127.0.0.1:4200 >/dev/null; then
-              echo "Frontend is ready"
+            if curl -sSf http://127.0.0.1/healthz >/dev/null; then
+              echo "Proxy and frontend are ready"
               exit 0
             fi
             sleep 2
           done
-          echo "Frontend did not start in time"
-          cat /tmp/ng-serve.log
+          echo "Proxy/frontend did not start in time"
+          docker compose -f ../docker/postgres/docker-compose.yml ps
           exit 1
 
       - name: Run Cypress authentication test
-        run: npx cypress run --e2e --browser chrome --headless --spec cypress/e2e/authentication.cy.ts
+        run: npm run cy:login
+
+      - name: Stop Docker Compose stack
+        if: always()
+        run: docker compose -f ../docker/postgres/docker-compose.yml down
