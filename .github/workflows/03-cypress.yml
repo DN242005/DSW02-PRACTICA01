@@ -4,17 +4,17 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 on:
-  push:
-    branches:
-      - develop
-  pull_request:
-    branches:
-      - main
-      - develop
+  workflow_run:
+    workflows:
+      - '02 SonarCloud'
+    types:
+      - completed
+  workflow_dispatch:
 
 jobs:
   cypress-auth:
     name: Cypress Auth E2E
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     defaults:
