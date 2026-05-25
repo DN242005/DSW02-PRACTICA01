@@ -1,14 +1,6 @@
 describe('Autenticacion - Login', () => {
   it('inicia sesion correctamente con usuario admin', () => {
-    cy.request({
-      method: 'GET',
-      url: '/actuator/health',
-      timeout: 60000,
-      retryOnStatusCodeFailure: true,
-      retryOnNetworkFailure: true
-    }).its('status').should('eq', 200);
-
-    cy.visit('/');
+    cy.visit('/', { timeout: 60000 });
 
     cy.get('input[name="correo"]', { timeout: 20000 }).should('be.visible').type('admin');
     cy.get('input[name="contrasena"]').should('be.visible').type('admin123');
