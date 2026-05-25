@@ -33,7 +33,7 @@ jobs:
           cache: maven
 
       - name: Run backend tests
-        run: mvn -B -Dtest='*Test,!*IntegrationTest' test
+        run: mvn -B test
 
   frontend:
     name: Frontend Unit Tests
