@@ -1,0 +1,80 @@
+contractVersion: 1.0.0
+feature: 004-cuatro-contenedores
+stack:
+  name: empleado-local-stack
+  requiredServiceCount: 4
+  services:
+    - name: backend
+      role: backend
+      exposure:
+        hostPublished: false
+        internalPorts: [8080]
+      dependsOn:
+        - database
+      healthcheck:
+        type: http
+        target: /actuator/health
+    - name: frontend
+      role: frontend
+      exposure:
+        hostPublished: false
+        internalPorts: [80]
+      dependsOn:
+        - backend
+      - name: database
+      role: database
+      exposure:
+        hostPublished: false
+        internalPorts: [5432]
+      persistence:
+        requiredVolume: postgres_data
+        defaultMode: persistent
+      healthcheck:
+        type: command
+        target: pg_isready
+    - name: proxy
+      role: proxy
+      exposure:
+        hostPublished: true
+        hostPorts: [80]
+        internalPorts: [80]
+      dependsOn:
+        - frontend
+        - backend
+      routing:
+        servesFrontend: true
+        forwardsApiTo: backend
+        forwardsAuthTo: backend
+        forwardsSwaggerTo: backend
+      healthcheck:
+        type: http
+        target: /healthz
+
+networking:
+  mode: shared-internal-network
+  rules:
+    - backend-and-db-must-be-internal-only
+    - only-proxy-exposes-host-port
+
+resilience:
+  restartPolicy:
+    mode: per-service-auto-restart
+    fullStackRestartOnSingleFailure: false
+
+readiness:
+  requiresAllServicesRunning: true
+  requiresFunctionalFlowViaProxy: true
+  functionalChecks:
+    - GET / through proxy returns frontend content
+    - GET /actuator/health through proxy returns healthy
+
+dataPolicy:
+  dbPersistenceDefault: true
+  explicitResetActionRequired: true
+
+validation:
+  command: ./docker/postgres/validate-stack.ps1
+  rules:
+    - required-services-present
+    - unique-role-mapping
+    - only-proxy-host-port-exposed

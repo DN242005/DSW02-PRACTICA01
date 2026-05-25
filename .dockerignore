@@ -1,0 +1,13 @@
+target/
+node_modules/
+dist/
+build/
+.git/
+.gitignore
+.dockerignore
+Dockerfile*
+*.log*
+.env*
+coverage/
+.vscode/
+.idea/
