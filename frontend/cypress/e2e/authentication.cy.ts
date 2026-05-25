@@ -1,11 +1,21 @@
 describe('Autenticacion - Login', () => {
   it('inicia sesion correctamente con usuario admin', () => {
+    cy.intercept('POST', '/auth/login', {
+      token: 'fake-token',
+      role: 'ADMIN'
+    }).as('login');
+    cy.intercept('GET', '/api/departamentos*', []).as('departamentos');
+    cy.intercept('GET', '/api/empleados*', []).as('empleados');
+
     cy.visit('/', { timeout: 60000 });
 
     cy.get('input[name="correo"]', { timeout: 20000 }).should('be.visible').type('admin');
     cy.get('input[name="contrasena"]').should('be.visible').type('admin123');
 
     cy.contains('button', 'Entrar al sistema').click();
+    cy.wait('@login');
+    cy.wait('@departamentos');
+    cy.wait('@empleados');
     // Reproduce the manual interaction that unblocks UI updates in affected environments.
     cy.contains('button', 'Ver', { timeout: 20000 }).click({ force: true });
     cy.get('body').click(1, 1, { force: true });
