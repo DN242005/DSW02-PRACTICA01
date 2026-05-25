@@ -19,7 +19,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: dsw02-Prcatica01
+        working-directory: .
 
     steps:
       - name: Checkout repository
@@ -41,7 +41,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: dsw02-Prcatica01/frontend
+        working-directory: frontend
 
     steps:
       - name: Checkout repository
