@@ -13,6 +13,8 @@ jobs:
     name: Build and Push to DockerHub
     runs-on: ubuntu-latest
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    env:
+      DOCKER_LOGIN: ${{ secrets.DOCKER_USERNAME != '' && secrets.DOCKER_PASSWORD != '' }}
 
     steps:
       - name: Checkout repository
@@ -23,27 +25,33 @@ jobs:
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
+        if: ${{ env.DOCKER_LOGIN == 'true' }}
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Skip Docker Hub login
+        if: ${{ env.DOCKER_LOGIN != 'true' }}
+        run: echo "DockerHub secrets not set, skipping push."
 
       - name: Build and push backend
         uses: docker/build-push-action@v5
         with:
           context: ./
           file: ./Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/crud-empleados-api:main
+          push: ${{ env.DOCKER_LOGIN == 'true' }}
+          tags: ${{ env.DOCKER_LOGIN == 'true' && format('{0}/crud-empleados-api:main', secrets.DOCKER_USERNAME) || 'local/crud-empleados-api:ci' }}
 
       - name: Build and push frontend
         uses: docker/build-push-action@v5
         with:
           context: ./frontend
           file: ./frontend/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/crud-empleados-frontend:main
+          push: ${{ env.DOCKER_LOGIN == 'true' }}
+          tags: ${{ env.DOCKER_LOGIN == 'true' && format('{0}/crud-empleados-frontend:main', secrets.DOCKER_USERNAME) || 'local/crud-empleados-frontend:ci' }}
 
       - name: Verify images pushed
+        if: ${{ env.DOCKER_LOGIN == 'true' }}
         run: |
           echo "Backend image pushed: ${{ secrets.DOCKER_USERNAME }}/crud-empleados-api"
           echo "Frontend image pushed: ${{ secrets.DOCKER_USERNAME }}/crud-empleados-frontend"
