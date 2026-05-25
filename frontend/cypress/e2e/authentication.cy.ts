@@ -16,10 +16,6 @@ describe('Autenticacion - Login', () => {
     cy.wait('@login');
     cy.wait('@departamentos');
     cy.wait('@empleados');
-    // Reproduce the manual interaction that unblocks UI updates in affected environments.
-    cy.contains('button', 'Ver', { timeout: 20000 }).click({ force: true });
-    cy.get('body').click(1, 1, { force: true });
-
     cy.contains('button', 'Cerrar sesion', { timeout: 30000 }).should('be.visible');
     cy.contains('h1', 'CRUD Empleados', { timeout: 30000 }).should('be.visible');
     cy.contains('p', 'Rol: ADMIN', { timeout: 30000 }).should('be.visible');
